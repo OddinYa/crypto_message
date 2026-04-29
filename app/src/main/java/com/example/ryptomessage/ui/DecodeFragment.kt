@@ -110,16 +110,28 @@ class DecodeFragment : Fragment() {
             return
         }
         
+        // Получаем наш приватный ключ
+        val myPrivateKey = prefsManager.privateKey
+        if (myPrivateKey.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Нет приватного ключа. Создайте профиль на вкладке 'Мой QR'", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         try {
-            // Получаем приватный ключ пользователя
-            val privateKey = prefsManager.privateKey
-            if (privateKey.isNullOrBlank()) {
-                Toast.makeText(requireContext(), "Нет приватного ключа. Создайте профиль на вкладке 'Мой QR'", Toast.LENGTH_SHORT).show()
+            // Расшифровываем сообщение используя ECDH: мой приватный ключ + публичный ключ отправителя
+            // Если контакт не выбран, пытаемся расшифровать без него (для неизвестных отправителей)
+            val theirPublicKey = selectedContact?.publicKey
+            
+            if (theirPublicKey.isNullOrBlank()) {
+                Toast.makeText(requireContext(), "Выберите отправителя из списка контактов", Toast.LENGTH_SHORT).show()
                 return
             }
             
-            // Расшифровываем сообщение
-            val decryptedMessage = CryptoManager.decryptMessage(encodedMessage, privateKey)
+            val decryptedMessage = CryptoManager.decryptMessage(
+                encodedMessage,
+                myPrivateKey,
+                theirPublicKey
+            )
             
             // Показываем результат
             binding.tvDecodedMessage.text = decryptedMessage
@@ -133,7 +145,7 @@ class DecodeFragment : Fragment() {
             
         } catch (e: Exception) {
             binding.cardResult.visibility = View.GONE
-            Toast.makeText(requireContext(), "Ошибка расшифровки: ${e.message}\n\nУбедитесь, что сообщение было зашифровано вашим публичным ключом.", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Ошибка расшифровки: ${e.message}\n\nУбедитесь, что сообщение было зашифровано с использованием вашего публичного ключа.", Toast.LENGTH_LONG).show()
         }
     }
 

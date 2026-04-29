@@ -54,6 +54,8 @@ dependencies {
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
     
+    // Bouncy Castle для криптографии (ECDH, ECDSA)
+    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

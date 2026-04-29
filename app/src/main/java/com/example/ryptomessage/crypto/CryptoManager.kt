@@ -5,18 +5,23 @@ import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Cipher
+import javax.crypto.KeyAgreement
+import javax.crypto.spec.SecretKeySpec
+import javax.crypto.spec.IvParameterSpec
 
 object CryptoManager {
     
-    private const val ALGORITHM = "RSA"
-    private const val TRANSFORMATION = "RSA/ECB/PKCS1Padding"
+    private const val EC_ALGORITHM = "EC"
+    private const val KEY_AGREEMENT_ALGORITHM = "ECDH"
+    private const val AES_ALGORITHM = "AES/CBC/PKCS5Padding"
+    private const val AES_KEY_SIZE = 256
     
     /**
-     * Генерирует пару ключей (публичный и приватный)
+     * Генерирует пару ключей EC (публичный и приватный) для ECDH
      */
     fun generateKeyPair(): Pair<String, String> {
-        val keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM)
-        keyPairGenerator.initialize(2048)
+        val keyPairGenerator = KeyPairGenerator.getInstance(EC_ALGORITHM, "BC")
+        keyPairGenerator.initialize(256) // secp256r1 curve
         val keyPair = keyPairGenerator.generateKeyPair()
         
         val publicKeyBase64 = Base64.encodeToString(keyPair.public.encoded, Base64.NO_WRAP)
@@ -26,59 +31,104 @@ object CryptoManager {
     }
     
     /**
-     * Декодирует приватный ключ из публичного ключа и сид-фразы
-     * В реальном приложении здесь должна быть более сложная логика
+     * Вычисляет общий секретный ключ usando ECDH
+     * myPrivateKey - мой приватный ключ
+     * theirPublicKey - публичный ключ собеседника
      */
-    fun derivePrivateKeyFromPublicKeyAndSeed(publicKey: String, seed: String): String {
-        // Это упрощенная реализация - в реальности нужно использовать proper key derivation
-        // Для демонстрации используем хеш от комбинации публичного ключа и сида
-        val combined = publicKey + seed
+    private fun deriveSharedSecret(myPrivateKey: String, theirPublicKey: String): ByteArray {
+        // Декодируем ключи
+        val myPrivateKeyBytes = Base64.decode(myPrivateKey, Base64.NO_WRAP)
+        val theirPublicKeyBytes = Base64.decode(theirPublicKey, Base64.NO_WRAP)
+        
+        // Восстанавливаем ключи
+        val keyFactory = KeyFactory.getInstance(EC_ALGORITHM, "BC")
+        val privateKeySpec = PKCS8EncodedKeySpec(myPrivateKeyBytes)
+        val publicKeySpec = X509EncodedKeySpec(theirPublicKeyBytes)
+        
+        val privateKey = keyFactory.generatePrivate(privateKeySpec)
+        val publicKey = keyFactory.generatePublic(publicKeySpec)
+        
+        // Вычисляем общий секрет через ECDH
+        val keyAgreement = KeyAgreement.getInstance(KEY_AGREEMENT_ALGORITHM, "BC")
+        keyAgreement.init(privateKey)
+        keyAgreement.doPhase(publicKey, true)
+        
+        // Генерируем общий секрет
+        val sharedSecret = keyAgreement.generateSecret()
+        
+        // Хэшируем секрет для получения ключа нужной длины
         val sha256 = MessageDigest.getInstance("SHA-256")
-        val hash = sha256.digest(combined.toByteArray())
-        
-        // Создаем детерминированный приватный ключ на основе хеша
-        val keyFactory = KeyFactory.getInstance(ALGORITHM)
-        val keySpec = PKCS8EncodedKeySpec(hash)
-        
-        // Возвращаем хеш как строку для простоты
-        return Base64.encodeToString(hash, Base64.NO_WRAP)
+        return sha256.digest(sharedSecret)
     }
     
     /**
-     * Шифрует сообщение с использованием публичного ключа получателя
+     * Шифрует сообщение для конкретного получателя
+     * Использует ECDH для вычисления общего секрета и AES для шифрования
+     * 
+     * @param message Сообщение для шифрования
+     * @param myPrivateKey Мой приватный ключ
+     * @param theirPublicKey Публичный ключ получателя
+     * @return Зашифрованное сообщение в формате: IV (16 байт) + зашифрованные данные, всё в Base64
      */
-    fun encryptMessage(message: String, publicKeyBase64: String): String {
+    fun encryptMessage(message: String, myPrivateKey: String, theirPublicKey: String): String {
         try {
-            val keyBytes = Base64.decode(publicKeyBase64, Base64.NO_WRAP)
-            val keySpec = X509EncodedKeySpec(keyBytes)
-            val keyFactory = KeyFactory.getInstance(ALGORITHM)
-            val publicKey = keyFactory.generatePublic(keySpec)
+            // Вычисляем общий секрет
+            val sharedSecret = deriveSharedSecret(myPrivateKey, theirPublicKey)
             
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey)
+            // Создаем AES ключ из общего секрета
+            val secretKey = SecretKeySpec(sharedSecret, "AES")
             
+            // Генерируем случайный IV
+            val iv = ByteArray(16)
+            val secureRandom = SecureRandom()
+            secureRandom.nextBytes(iv)
+            val ivSpec = IvParameterSpec(iv)
+            
+            // Шифруем сообщение
+            val cipher = Cipher.getInstance(AES_ALGORITHM)
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
             val encryptedBytes = cipher.doFinal(message.toByteArray(Charsets.UTF_8))
-            return Base64.encodeToString(encryptedBytes, Base64.NO_WRAP)
+            
+            // Объединяем IV и зашифрованные данные
+            val result = iv + encryptedBytes
+            
+            return Base64.encodeToString(result, Base64.NO_WRAP)
         } catch (e: Exception) {
             throw RuntimeException("Ошибка шифрования: ${e.message}", e)
         }
     }
     
     /**
-     * Расшифровывает сообщение с использованием приватного ключа
+     * Расшифровывает сообщение от конкретного отправителя
+     * Использует ECDH для вычисления общего секрета и AES для расшифровки
+     * 
+     * @param encryptedMessage Зашифрованное сообщение (IV + данные в Base64)
+     * @param myPrivateKey Мой приватный ключ
+     * @param theirPublicKey Публичный ключ отправителя
+     * @return Расшифрованное сообщение
      */
-    fun decryptMessage(encryptedMessage: String, privateKeyBase64: String): String {
+    fun decryptMessage(encryptedMessage: String, myPrivateKey: String, theirPublicKey: String): String {
         try {
-            val keyBytes = Base64.decode(privateKeyBase64, Base64.NO_WRAP)
-            val keySpec = PKCS8EncodedKeySpec(keyBytes)
-            val keyFactory = KeyFactory.getInstance(ALGORITHM)
-            val privateKey = keyFactory.generatePrivate(keySpec)
+            // Вычисляем общий секрет (тот же самый, что использовался при шифровании)
+            val sharedSecret = deriveSharedSecret(myPrivateKey, theirPublicKey)
             
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.DECRYPT_MODE, privateKey)
+            // Создаем AES ключ из общего секрета
+            val secretKey = SecretKeySpec(sharedSecret, "AES")
             
+            // Декодируем сообщение
             val encryptedBytes = Base64.decode(encryptedMessage, Base64.NO_WRAP)
-            val decryptedBytes = cipher.doFinal(encryptedBytes)
+            
+            // Извлекаем IV (первые 16 байт)
+            val iv = encryptedBytes.sliceArray(0 until 16)
+            val ivSpec = IvParameterSpec(iv)
+            
+            // Извлекаем зашифрованные данные
+            val cipherText = encryptedBytes.sliceArray(16 until encryptedBytes.size)
+            
+            // Расшифровываем
+            val cipher = Cipher.getInstance(AES_ALGORITHM)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+            val decryptedBytes = cipher.doFinal(cipherText)
             
             return String(decryptedBytes, Charsets.UTF_8)
         } catch (e: Exception) {
