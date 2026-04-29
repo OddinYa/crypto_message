@@ -17,7 +17,7 @@ build/
 # Environment
 .env
 .env.local
-.env.*
+*.env.*
 
 # Dependencies
 node_modules/
@@ -27,27 +27,8 @@ vendor/bundle
 .DS_Store
 Thumbs.db
 
-# Compiled files
-*.class
-*.jar
-*.war
-*.ear
-*.so
-*.dll
-*.dylib
-
-# Python (if applicable)
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-.eggs/
-.coverage
-htmlcov/
-.coverage.*
-.mypy_cache/
-.pytest_cache/
-.tox/
+# Temporary files
+*.tmp
+*.swp
+*~
 ```
