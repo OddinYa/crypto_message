@@ -1,3 +1,41 @@
-```
+```kotlin
+# Kotlin/Android specific
+*.class
+*.dex
+*.jar
+*.war
+*.aar
+
+# Build directories
+build/
 .gradle/
+.target/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Android Studio generated files
+captures/
+*.cap
+
+# Gradle
+.gradle/
+!/gradle/wrapper/gradle-wrapper.jar
+
+# Android packaging
+*.apk
+*.ap_
+*.aab
+
+# Log Files
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 ```

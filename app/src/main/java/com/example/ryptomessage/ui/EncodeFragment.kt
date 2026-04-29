@@ -127,10 +127,18 @@ class EncodeFragment : Fragment() {
             return
         }
         
+        // Получаем свой приватный ключ
+        val myPrivateKey = prefsManager.privateKey
+        if (myPrivateKey.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Приватный ключ не найден. Сгенерируйте ключи в настройках.", Toast.LENGTH_LONG).show()
+            return
+        }
+        
         try {
-            // Шифруем сообщение публичным ключом получателя
+            // Шифруем сообщение своим приватным ключом и публичным ключом получателя
             val encryptedMessage = CryptoManager.encryptMessage(
                 message,
+                myPrivateKey,
                 selectedContact!!.publicKey
             )
             
