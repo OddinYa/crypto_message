@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">СryptoMessage</string>
+    <string name="app_name">CryptoMessage</string>
     
     <!-- Bottom Navigation -->
     <string name="nav_qr">Мой QR</string>
