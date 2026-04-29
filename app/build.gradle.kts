@@ -42,7 +42,7 @@ dependencies {
     
     // QR Code generation and scanning
     implementation("com.google.zxing:core:3.5.2")
-    implementation("com.journeyapps:zxing-android-embedded:4.1.0")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     
     // Navigation Component
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
