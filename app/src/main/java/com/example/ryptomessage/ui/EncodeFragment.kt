@@ -16,7 +16,7 @@ import com.example.ryptomessage.crypto.CryptoManager
 import com.example.ryptomessage.data.Contact
 import com.example.ryptomessage.data.PreferencesManager
 import com.example.ryptomessage.databinding.FragmentEncodeBinding
-import com.journeyapps.barcodecapture.BarcodeCapture
+import com.journeyapps.zxing.android.embedded.IntentIntegrator
 
 class EncodeFragment : Fragment() {
 
@@ -29,12 +29,12 @@ class EncodeFragment : Fragment() {
     private var selectedContact: Contact? = null
     
     private val scanQRLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val scanResult = BarcodeCapture.parseActivityResult(result)
+        val scanResult = IntentIntegrator.parseActivityResult(result)
         if (scanResult != null) {
-            if (scanResult.text == null) {
+            if (scanResult.contents == null) {
                 Toast.makeText(requireContext(), "Сканирование отменено", Toast.LENGTH_SHORT).show()
             } else {
-                handleScannedQR(scanResult.text!!)
+                handleScannedQR(scanResult.contents!!)
             }
         } else {
             Toast.makeText(requireContext(), "Ошибка сканирования", Toast.LENGTH_SHORT).show()
@@ -106,8 +106,7 @@ class EncodeFragment : Fragment() {
     }
 
     private fun scanQR() {
-        val intent = BarcodeCapture.buildIntent(requireContext())
-        scanQRLauncher.launch(intent)
+        IntentIntegrator.supportFragment(this).initiateScan()
     }
 
     private fun encodeMessage() {
