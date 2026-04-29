@@ -104,8 +104,9 @@ class EncodeFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
         val scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
         if (scanResult != null) {
-            if (scanResult.contents != null) {
-                handleScannedQR(scanResult.contents!!)
+            val scannedContent = scanResult.contents
+            if (scannedContent != null) {
+                handleScannedQR(scannedContent)
             } else {
                 Toast.makeText(requireContext(), "Сканирование отменено", Toast.LENGTH_SHORT).show()
             }
