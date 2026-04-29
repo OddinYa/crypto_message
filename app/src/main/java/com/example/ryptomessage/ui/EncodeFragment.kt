@@ -127,18 +127,12 @@ class EncodeFragment : Fragment() {
             return
         }
         
-        // Получаем свой приватный ключ
-        val myPrivateKey = prefsManager.privateKey
-        if (myPrivateKey.isNullOrBlank()) {
-            Toast.makeText(requireContext(), "Приватный ключ не найден. Сгенерируйте ключи в настройках.", Toast.LENGTH_LONG).show()
-            return
-        }
-        
         try {
-            // Шифруем сообщение своим приватным ключом и публичным ключом получателя
+            // Шифруем сообщение ТОЛЬКО публичным ключом получателя
+            // Только получатель сможет расшифровать своим приватным ключом
+            // Общий секретный ключ генерируется на лету и никогда не хранится
             val encryptedMessage = CryptoManager.encryptMessage(
                 message,
-                myPrivateKey,
                 selectedContact!!.publicKey
             )
             
@@ -149,7 +143,7 @@ class EncodeFragment : Fragment() {
             binding.tvResult.text = encryptedMessage
             binding.tvResult.visibility = View.VISIBLE
             
-            Toast.makeText(requireContext(), "Сообщение зашифровано и скопировано!", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Сообщение зашифровано для ${selectedContact!!.nickname} и скопировано!", Toast.LENGTH_LONG).show()
             
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Ошибка шифрования: ${e.message}", Toast.LENGTH_LONG).show()
