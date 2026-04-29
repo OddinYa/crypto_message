@@ -54,16 +54,26 @@ class DecodeFragment : Fragment() {
             decodeMessage()
         }
         
+        // Кнопка удаления контакта
+        binding.btnDeleteContact.setOnClickListener {
+            deleteSelectedContact()
+        }
+        
         // Обработчик выбора контакта
         binding.spinnerContacts.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                if (position >= 0 && position < contactsList.size) {
-                    selectedContact = contactsList[position]
+                if (position > 0 && position <= contactsList.size) {
+                    selectedContact = contactsList[position - 1]
+                    binding.btnDeleteContact.visibility = View.VISIBLE
+                } else {
+                    selectedContact = null
+                    binding.btnDeleteContact.visibility = View.GONE
                 }
             }
             
             override fun onNothingSelected(parent: AdapterView<*>) {
                 selectedContact = null
+                binding.btnDeleteContact.visibility = View.GONE
             }
         }
     }
@@ -88,6 +98,9 @@ class DecodeFragment : Fragment() {
         } else {
             selectedContact = null
         }
+        
+        // Скрываем кнопку удаления если нет контактов
+        binding.btnDeleteContact.visibility = View.GONE
     }
 
     private fun pasteFromClipboard() {
@@ -103,6 +116,20 @@ class DecodeFragment : Fragment() {
         }
     }
 
+    private fun deleteSelectedContact() {
+        if (selectedContact == null) {
+            Toast.makeText(requireContext(), "Выберите контакт для удаления", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        prefsManager.deleteContact(selectedContact!!.id)
+        Toast.makeText(requireContext(), "Контакт \"${selectedContact!!.nickname}\" удален", Toast.LENGTH_SHORT).show()
+        
+        // Обновляем список контактов
+        loadContacts()
+        selectedContact = null
+    }
+
     private fun decodeMessage() {
         val encodedMessage = binding.etEncodedMessage.text.toString().trim()
         if (encodedMessage.isEmpty()) {
@@ -115,6 +142,12 @@ class DecodeFragment : Fragment() {
             val privateKey = prefsManager.privateKey
             if (privateKey.isNullOrBlank()) {
                 Toast.makeText(requireContext(), "Нет приватного ключа. Создайте профиль на вкладке 'Мой QR'", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Проверяем, есть ли выбранный контакт в списке контактов
+            if (selectedContact == null) {
+                Toast.makeText(requireContext(), "Выберите контакт из списка для расшифровки", Toast.LENGTH_SHORT).show()
                 return
             }
             
@@ -133,7 +166,7 @@ class DecodeFragment : Fragment() {
             
         } catch (e: Exception) {
             binding.cardResult.visibility = View.GONE
-            Toast.makeText(requireContext(), "Ошибка расшифровки: ${e.message}\n\nУбедитесь, что сообщение было зашифровано вашим публичным ключом.", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Ошибка расшифровки: ${e.message}\n\nУбедитесь, что сообщение было зашифровано вашим публичным ключом и вы выбрали правильный контакт.", Toast.LENGTH_LONG).show()
         }
     }
 

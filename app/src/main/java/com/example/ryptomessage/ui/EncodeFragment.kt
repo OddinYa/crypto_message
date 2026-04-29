@@ -10,7 +10,6 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.example.ryptomessage.crypto.CryptoManager
 import com.example.ryptomessage.data.Contact
@@ -27,19 +26,6 @@ class EncodeFragment : Fragment() {
     private lateinit var contactsAdapter: ArrayAdapter<String>
     private var contactsList = listOf<Contact>()
     private var selectedContact: Contact? = null
-    
-    private val scanQRLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val scanResult = IntentIntegrator.parseActivityResult(result)
-            if (scanResult != null && scanResult.contents != null) {
-                handleScannedQR(scanResult.contents!!)
-            } else {
-                Toast.makeText(requireContext(), "Сканирование отменено", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(requireContext(), "Ошибка сканирования", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -110,9 +96,22 @@ class EncodeFragment : Fragment() {
         integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
         integrator.setPrompt("Сканировать QR код")
         integrator.setCameraId(0)
-        integrator.setBeepEnabled(true)
+        integrator.setBeepEnabled(false)
         integrator.setBarcodeImageEnabled(false)
         integrator.initiateScan()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        val scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
+        if (scanResult != null) {
+            if (scanResult.contents != null) {
+                handleScannedQR(scanResult.contents!!)
+            } else {
+                Toast.makeText(requireContext(), "Сканирование отменено", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
     }
 
     private fun encodeMessage() {
