@@ -1,35 +1,26 @@
 ```
-# Android build artifacts
-*.apk
-*.aar
-*.dex
-*.so
-
-# Android build directories
-build/
+# Gradle
 .gradle/
-captures/
-.externalNativeBuild/
+build/
+!gradle-wrapper.jar
 
-# Android Studio
+# IDE
 .idea/
-*.iml
-*.iws
+*.swp
+*.swo
+
+# Logs
 *.log
 
-# Local configuration file (sdk path, etc)
-local.properties
+# Environment
+.env
+.env.local
+*.env.*
 
-# Keystore properties
-key.properties
-
-# Log Files
-*.log
-
-# Built application files
-bin/
-gen/
-
-# Unit test results
-test-results/
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
 ```
