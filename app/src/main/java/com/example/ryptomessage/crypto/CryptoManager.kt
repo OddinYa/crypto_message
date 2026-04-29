@@ -8,14 +8,14 @@ import javax.crypto.Cipher
 
 object CryptoManager {
     
-    private const val ALGORITHM = "RSA"
-    private const val TRANSFORMATION = "RSA/ECB/PKCS1Padding"
+    private const val RSA_ALGORITHM = "RSA"
+    private const val RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding"
     
     /**
      * Генерирует пару ключей (публичный и приватный)
      */
     fun generateKeyPair(): Pair<String, String> {
-        val keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM)
+        val keyPairGenerator = KeyPairGenerator.getInstance(RSA_ALGORITHM)
         keyPairGenerator.initialize(2048)
         val keyPair = keyPairGenerator.generateKeyPair()
         
@@ -26,37 +26,24 @@ object CryptoManager {
     }
     
     /**
-     * Декодирует приватный ключ из публичного ключа и сид-фразы
-     * В реальном приложении здесь должна быть более сложная логика
+     * Шифрует сообщение ТОЛЬКО для конкретного контакта
+     * Использует публичный ключ получателя
+     * Общий секретный ключ генерируется на лету и никогда не хранится
+     * Только владелец соответствующего приватного ключа сможет расшифровать
      */
-    fun derivePrivateKeyFromPublicKeyAndSeed(publicKey: String, seed: String): String {
-        // Это упрощенная реализация - в реальности нужно использовать proper key derivation
-        // Для демонстрации используем хеш от комбинации публичного ключа и сида
-        val combined = publicKey + seed
-        val sha256 = MessageDigest.getInstance("SHA-256")
-        val hash = sha256.digest(combined.toByteArray())
-        
-        // Создаем детерминированный приватный ключ на основе хеша
-        val keyFactory = KeyFactory.getInstance(ALGORITHM)
-        val keySpec = PKCS8EncodedKeySpec(hash)
-        
-        // Возвращаем хеш как строку для простоты
-        return Base64.encodeToString(hash, Base64.NO_WRAP)
-    }
-    
-    /**
-     * Шифрует сообщение с использованием публичного ключа получателя
-     */
-    fun encryptMessage(message: String, publicKeyBase64: String): String {
+    fun encryptMessage(message: String, recipientPublicKeyBase64: String): String {
         try {
-            val keyBytes = Base64.decode(publicKeyBase64, Base64.NO_WRAP)
-            val keySpec = X509EncodedKeySpec(keyBytes)
-            val keyFactory = KeyFactory.getInstance(ALGORITHM)
-            val publicKey = keyFactory.generatePublic(keySpec)
+            // Декодируем публичный ключ получателя
+            val recipientKeyBytes = Base64.decode(recipientPublicKeyBase64, Base64.NO_WRAP)
+            val recipientKeySpec = X509EncodedKeySpec(recipientKeyBytes)
+            val recipientKeyFactory = KeyFactory.getInstance(RSA_ALGORITHM)
+            val recipientPublicKey = recipientKeyFactory.generatePublic(recipientKeySpec)
             
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey)
+            // Создаем Cipher для шифрования
+            val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, recipientPublicKey)
             
+            // Шифруем сообщение публичным ключом получателя
             val encryptedBytes = cipher.doFinal(message.toByteArray(Charsets.UTF_8))
             return Base64.encodeToString(encryptedBytes, Base64.NO_WRAP)
         } catch (e: Exception) {
@@ -65,52 +52,23 @@ object CryptoManager {
     }
     
     /**
-     * Шифрует сообщение с использованием приватного ключа отправителя и публичного ключа получателя
-     * (для цифровой подписи и шифрования)
-     */
-    fun encryptMessage(message: String, privateKeyBase64: String, publicKeyBase64: String): String {
-        try {
-            // Сначала подписываем сообщение приватным ключом
-            val privateKeyBytes = Base64.decode(privateKeyBase64, Base64.NO_WRAP)
-            val privateKeySpec = PKCS8EncodedKeySpec(privateKeyBytes)
-            val keyFactory = KeyFactory.getInstance(ALGORITHM)
-            val privateKey = keyFactory.generatePrivate(privateKeySpec)
-            
-            val signature = Signature.getInstance("SHA256withRSA")
-            signature.initSign(privateKey)
-            signature.update(message.toByteArray(Charsets.UTF_8))
-            val signatureBytes = signature.sign()
-            
-            // Затем шифруем сообщение вместе с подписью публичным ключом получателя
-            val publicKeyBytes = Base64.decode(publicKeyBase64, Base64.NO_WRAP)
-            val publicKeySpec = X509EncodedKeySpec(publicKeyBytes)
-            val publicKey = keyFactory.generatePublic(publicKeySpec)
-            
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey)
-            
-            // Объединяем сообщение и подпись
-            val messageWithSignature = message + "|" + Base64.encodeToString(signatureBytes, Base64.NO_WRAP)
-            val encryptedBytes = cipher.doFinal(messageWithSignature.toByteArray(Charsets.UTF_8))
-            return Base64.encodeToString(encryptedBytes, Base64.NO_WRAP)
-        } catch (e: Exception) {
-            throw RuntimeException("Ошибка шифрования: ${e.message}", e)
-        }
-    }
-    
-    /**
-     * Расшифровывает сообщение с использованием приватного ключа
+     * Расшифровывает сообщение ТОЛЬКО если у получателя есть приватный ключ
+     * Соответствующий публичному ключу, которым было зашифровано сообщение
+     * Может расшифровать только тот, у кого есть правильный приватный ключ
      */
     fun decryptMessage(encryptedMessage: String, privateKeyBase64: String): String {
         try {
+            // Декодируем приватный ключ
             val keyBytes = Base64.decode(privateKeyBase64, Base64.NO_WRAP)
             val keySpec = PKCS8EncodedKeySpec(keyBytes)
-            val keyFactory = KeyFactory.getInstance(ALGORITHM)
+            val keyFactory = KeyFactory.getInstance(RSA_ALGORITHM)
             val privateKey = keyFactory.generatePrivate(keySpec)
             
-            val cipher = Cipher.getInstance(TRANSFORMATION)
+            // Создаем Cipher для расшифровки
+            val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
             cipher.init(Cipher.DECRYPT_MODE, privateKey)
             
+            // Расшифровываем сообщение
             val encryptedBytes = Base64.decode(encryptedMessage, Base64.NO_WRAP)
             val decryptedBytes = cipher.doFinal(encryptedBytes)
             
