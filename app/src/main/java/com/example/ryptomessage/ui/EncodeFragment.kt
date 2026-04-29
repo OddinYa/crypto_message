@@ -107,6 +107,7 @@ class EncodeFragment : Fragment() {
 
     private fun scanQR() {
         val integrator = IntentIntegrator.forSupportFragment(this)
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES)
         integrator.initiateScan()
     }
 
