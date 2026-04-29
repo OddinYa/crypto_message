@@ -122,10 +122,18 @@ class EncodeFragment : Fragment() {
             return
         }
         
+        // Получаем наш приватный ключ
+        val myPrivateKey = prefsManager.privateKey
+        if (myPrivateKey.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Нет приватного ключа. Создайте профиль на вкладке 'Мой QR'", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         try {
-            // Шифруем сообщение публичным ключом получателя
+            // Шифруем сообщение используя ECDH: мой приватный ключ + публичный ключ получателя
             val encryptedMessage = CryptoManager.encryptMessage(
                 message,
+                myPrivateKey,
                 selectedContact!!.publicKey
             )
             
