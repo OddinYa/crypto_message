@@ -72,7 +72,7 @@ object CryptoManager {
      */
     fun encryptMessage(message: String, myPrivateKey: String, theirPublicKey: String): String {
         try {
-            // Вычисляем общий секрет
+            // Вычисляем общий секрет: мой приватный + их публичный
             val sharedSecret = deriveSharedSecret(myPrivateKey, theirPublicKey)
             
             // Создаем AES ключ из общего секрета
@@ -102,14 +102,22 @@ object CryptoManager {
      * Расшифровывает сообщение от конкретного отправителя
      * Использует ECDH для вычисления общего секрета и AES для расшифровки
      * 
+     * ВАЖНО: Для корректной расшифровки нужно использовать:
+     * - myPrivateKey = приватный ключ ПОЛУЧАТЕЛЯ (того, кто расшифровывает)
+     * - theirPublicKey = публичный ключ ОТПРАВИТЕЛЯ (того, кто зашифровал)
+     * 
+     * Общий секрет будет тем же самым, потому что:
+     * - Отправитель вычислил: приватный_отправителя + публичный_получателя
+     * - Получатель вычисляет: приватный_получателя + публичный_отправителя
+     * 
      * @param encryptedMessage Зашифрованное сообщение (IV + данные в Base64)
-     * @param myPrivateKey Мой приватный ключ
-     * @param theirPublicKey Публичный ключ отправителя
+     * @param myPrivateKey Приватный ключ ПОЛУЧАТЕЛЯ (для расшифровки)
+     * @param theirPublicKey Публичный ключ ОТПРАВИТЕЛЯ (кто зашифровал)
      * @return Расшифрованное сообщение
      */
     fun decryptMessage(encryptedMessage: String, myPrivateKey: String, theirPublicKey: String): String {
         try {
-            // Вычисляем общий секрет (тот же самый, что использовался при шифровании)
+            // Вычисляем общий секрет: мой приватный (получателя) + их публичный (отправителя)
             val sharedSecret = deriveSharedSecret(myPrivateKey, theirPublicKey)
             
             // Создаем AES ключ из общего секрета
