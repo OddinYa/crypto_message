@@ -1,3 +1,35 @@
 <resources>
     <string name="app_name">СryptoMessage</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="nav_qr">Мой QR</string>
+    <string name="nav_encode">Написать</string>
+    <string name="nav_decode">Прочитать</string>
+    
+    <!-- QR Fragment -->
+    <string name="qr_title">Твой профиль</string>
+    <string name="qr_nickname_label">Твой никнейм</string>
+    <string name="qr_nickname_hint">Введи никнейм</string>
+    <string name="qr_save">Сохранить</string>
+    <string name="qr_code_title">Твой QR код</string>
+    <string name="qr_copy_key">Копировать ключ</string>
+    <string name="qr_description">Другие пользователи могут отсканировать этот QR, чтобы добавить тебя в контакты и отправить зашифрованное сообщение.</string>
+    
+    <!-- Encode Fragment -->
+    <string name="encode_title">Написать зашифрованное сообщение</string>
+    <string name="encode_recipient">Получатель</string>
+    <string name="encode_scan_qr">Добавить по QR</string>
+    <string name="encode_message">Сообщение</string>
+    <string name="encode_message_hint">Введи сообщение</string>
+    <string name="encode_button">Закодировать и копировать</string>
+    <string name="encode_no_contacts">Нет контактов - отсканируйте QR</string>
+    
+    <!-- Decode Fragment -->
+    <string name="decode_title">Расшифровать сообщение</string>
+    <string name="decode_sender">Сообщение от: ...</string>
+    <string name="decode_encoded_label">Закодированное сообщение</string>
+    <string name="decode_hint">Вставь зашифрованное сообщение</string>
+    <string name="decode_paste">Вставить из буфера</string>
+    <string name="decode_button">Декодировать</string>
+    <string name="decode_result_label">Расшифрованное сообщение:</string>
 </resources>
