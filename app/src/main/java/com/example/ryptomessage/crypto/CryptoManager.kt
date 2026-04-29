@@ -65,6 +65,40 @@ object CryptoManager {
     }
     
     /**
+     * Шифрует сообщение с использованием приватного ключа отправителя и публичного ключа получателя
+     * (для цифровой подписи и шифрования)
+     */
+    fun encryptMessage(message: String, privateKeyBase64: String, publicKeyBase64: String): String {
+        try {
+            // Сначала подписываем сообщение приватным ключом
+            val privateKeyBytes = Base64.decode(privateKeyBase64, Base64.NO_WRAP)
+            val privateKeySpec = PKCS8EncodedKeySpec(privateKeyBytes)
+            val keyFactory = KeyFactory.getInstance(ALGORITHM)
+            val privateKey = keyFactory.generatePrivate(privateKeySpec)
+            
+            val signature = Signature.getInstance("SHA256withRSA")
+            signature.initSign(privateKey)
+            signature.update(message.toByteArray(Charsets.UTF_8))
+            val signatureBytes = signature.sign()
+            
+            // Затем шифруем сообщение вместе с подписью публичным ключом получателя
+            val publicKeyBytes = Base64.decode(publicKeyBase64, Base64.NO_WRAP)
+            val publicKeySpec = X509EncodedKeySpec(publicKeyBytes)
+            val publicKey = keyFactory.generatePublic(publicKeySpec)
+            
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey)
+            
+            // Объединяем сообщение и подпись
+            val messageWithSignature = message + "|" + Base64.encodeToString(signatureBytes, Base64.NO_WRAP)
+            val encryptedBytes = cipher.doFinal(messageWithSignature.toByteArray(Charsets.UTF_8))
+            return Base64.encodeToString(encryptedBytes, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            throw RuntimeException("Ошибка шифрования: ${e.message}", e)
+        }
+    }
+    
+    /**
      * Расшифровывает сообщение с использованием приватного ключа
      */
     fun decryptMessage(encryptedMessage: String, privateKeyBase64: String): String {
