@@ -35,12 +35,19 @@
                 android:padding="16dp">
 
                 <TextView
-                    android:id="@+id/tvSender"
+                    android:id="@+id/tvSenderLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Сообщение от: ..."
+                    android:text="Отправитель"
                     android:textSize="16sp"
                     android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerContacts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:minHeight="48dp" />
 
                 <TextView
                     android:layout_width="wrap_content"

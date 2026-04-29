@@ -117,6 +117,41 @@
                     android:text="Копировать ключ"
                     android:layout_marginTop="8dp" />
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Или вставь публичный ключ вручную"
+                    android:textSize="14sp"
+                    android:layout_marginTop="16dp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/publicKeyInputLayout"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="Вставь публичный ключ">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPublicKey"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine"
+                        android:minLines="3"
+                        android:maxLines="5"
+                        android:fontFamily="monospace"
+                        android:gravity="top" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <Button
+                    android:id="@+id/btnImportPublicKey"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Сохранить ключ"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="8dp" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
