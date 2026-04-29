@@ -51,6 +51,10 @@ class QRFragment : Fragment() {
         binding.btnCopyPublicKey.setOnClickListener {
             copyPublicKeyToClipboard()
         }
+        
+        binding.btnImportPublicKey.setOnClickListener {
+            importPublicKey()
+        }
     }
 
     private fun loadUserData() {
@@ -135,6 +139,37 @@ class QRFragment : Fragment() {
         clipboard.setPrimaryClip(clip)
         
         Toast.makeText(requireContext(), "Публичный ключ скопирован", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun importPublicKey() {
+        val publicKey = binding.etPublicKey.text.toString().trim()
+        if (publicKey.isEmpty()) {
+            Toast.makeText(requireContext(), "Введите публичный ключ", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Проверяем, не добавлен ли уже контакт с таким же ключом
+        val existingContacts = prefsManager.getContacts()
+        val existingContact = existingContacts.find { it.publicKey == publicKey }
+        if (existingContact != null) {
+            Toast.makeText(requireContext(), "Контакт \"${existingContact.nickname}\" уже добавлен!", Toast.LENGTH_LONG).show()
+            return
+        }
+        
+        // Создаем контакт с временным никнеймом
+        val contact = Contact(
+            id = System.currentTimeMillis().toString(),
+            nickname = "User_${publicKey.takeLast(8)}",
+            publicKey = publicKey
+        )
+        
+        // Сохраняем контакт
+        prefsManager.addContact(contact)
+        
+        // Очищаем поле ввода
+        binding.etPublicKey.text?.clear()
+        
+        Toast.makeText(requireContext(), "Ключ сохранен в контакты!", Toast.LENGTH_LONG).show()
     }
 
     private fun generateSeed(): String {

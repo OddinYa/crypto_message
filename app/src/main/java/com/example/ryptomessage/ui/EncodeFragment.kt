@@ -36,6 +36,8 @@ class EncodeFragment : Fragment() {
             } else {
                 handleScannedQR(scanResult.text!!)
             }
+        } else {
+            Toast.makeText(requireContext(), "Ошибка сканирования", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -157,12 +159,30 @@ class EncodeFragment : Fragment() {
             // Формат QR: "nickname|publicKey"
             val parts = qrContent.split("|")
             if (parts.size < 2) {
-                Toast.makeText(requireContext(), "Неверный формат QR кода", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Неверный формат QR кода. Ожидалось: никнейм|ключ", Toast.LENGTH_LONG).show()
                 return
             }
             
-            val nickname = parts[0]
-            val publicKey = parts[1]
+            val nickname = parts[0].trim()
+            val publicKey = parts[1].trim()
+            
+            if (nickname.isEmpty()) {
+                Toast.makeText(requireContext(), "Пустой никнейм в QR коде", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            if (publicKey.isEmpty()) {
+                Toast.makeText(requireContext(), "Пустой публичный ключ в QR коде", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Проверяем, не добавлен ли уже контакт с таким же ключом
+            val existingContacts = prefsManager.getContacts()
+            val existingContact = existingContacts.find { it.publicKey == publicKey }
+            if (existingContact != null) {
+                Toast.makeText(requireContext(), "Контакт \"$nickname\" уже добавлен!", Toast.LENGTH_LONG).show()
+                return
+            }
             
             // Создаем контакт
             val contact = Contact(
@@ -180,7 +200,7 @@ class EncodeFragment : Fragment() {
             Toast.makeText(requireContext(), "Контакт \"$nickname\" добавлен!", Toast.LENGTH_LONG).show()
             
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Ошибка при добавлении контакта: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Ошибка при добавлении контакта: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 }

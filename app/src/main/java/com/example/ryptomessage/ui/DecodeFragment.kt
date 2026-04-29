@@ -6,9 +6,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.ryptomessage.crypto.CryptoManager
+import com.example.ryptomessage.data.Contact
 import com.example.ryptomessage.data.PreferencesManager
 import com.example.ryptomessage.databinding.FragmentDecodeBinding
 
@@ -18,6 +21,9 @@ class DecodeFragment : Fragment() {
     private val binding get() = _binding!!
     
     private lateinit var prefsManager: PreferencesManager
+    private lateinit var contactsAdapter: ArrayAdapter<String>
+    private var contactsList = listOf<Contact>()
+    private var selectedContact: Contact? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,6 +40,7 @@ class DecodeFragment : Fragment() {
         prefsManager = PreferencesManager(requireContext())
         
         setupUI()
+        loadContacts()
     }
 
     private fun setupUI() {
@@ -45,6 +52,41 @@ class DecodeFragment : Fragment() {
         // Кнопка декодирования
         binding.btnDecode.setOnClickListener {
             decodeMessage()
+        }
+        
+        // Обработчик выбора контакта
+        binding.spinnerContacts.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                if (position >= 0 && position < contactsList.size) {
+                    selectedContact = contactsList[position]
+                }
+            }
+            
+            override fun onNothingSelected(parent: AdapterView<*>) {
+                selectedContact = null
+            }
+        }
+    }
+
+    private fun loadContacts() {
+        contactsList = prefsManager.getContacts()
+        
+        val contactNames = mutableListOf<String>()
+        contactNames.add("Неизвестный отправитель")
+        contactNames.addAll(contactsList.map { it.nickname })
+        
+        contactsAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            contactNames
+        )
+        contactsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerContacts.adapter = contactsAdapter
+        
+        if (contactsList.isNotEmpty()) {
+            selectedContact = contactsList.first()
+        } else {
+            selectedContact = null
         }
     }
 
@@ -83,8 +125,9 @@ class DecodeFragment : Fragment() {
             binding.tvDecodedMessage.text = decryptedMessage
             binding.cardResult.visibility = View.VISIBLE
             
-            // Обновляем информацию об отправителе (если есть в сообщении)
-            binding.tvSender.text = "Сообщение расшифровано успешно!"
+            // Обновляем информацию об отправителе
+            val senderName = selectedContact?.nickname ?: "Неизвестный отправитель"
+            binding.tvSenderLabel.text = "Отправитель: $senderName"
             
             Toast.makeText(requireContext(), "Сообщение расшифровано!", Toast.LENGTH_SHORT).show()
             
