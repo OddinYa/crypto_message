@@ -16,7 +16,7 @@ import com.example.ryptomessage.crypto.CryptoManager
 import com.example.ryptomessage.data.Contact
 import com.example.ryptomessage.data.PreferencesManager
 import com.example.ryptomessage.databinding.FragmentEncodeBinding
-import com.google.zxing.integration.android.IntentIntegrator
+import com.journeyapps.barcodecapture.BarcodeCapture
 
 class EncodeFragment : Fragment() {
 
@@ -27,6 +27,17 @@ class EncodeFragment : Fragment() {
     private lateinit var contactsAdapter: ArrayAdapter<String>
     private var contactsList = listOf<Contact>()
     private var selectedContact: Contact? = null
+    
+    private val scanQRLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val scanResult = BarcodeCapture.parseActivityResult(result)
+        if (scanResult != null) {
+            if (scanResult.text == null) {
+                Toast.makeText(requireContext(), "Сканирование отменено", Toast.LENGTH_SHORT).show()
+            } else {
+                handleScannedQR(scanResult.text!!)
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -93,13 +104,8 @@ class EncodeFragment : Fragment() {
     }
 
     private fun scanQR() {
-        val integrator = IntentIntegrator(requireActivity())
-        integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-        integrator.setPrompt("Отсканируйте QR код пользователя")
-        integrator.setCameraId(0)
-        integrator.setBeepEnabled(true)
-        integrator.setBarcodeImageEnabled(false)
-        integrator.initiateScan()
+        val intent = BarcodeCapture.buildIntent(requireContext())
+        scanQRLauncher.launch(intent)
     }
 
     private fun encodeMessage() {
@@ -141,18 +147,9 @@ class EncodeFragment : Fragment() {
         clipboard.setPrimaryClip(clip)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
-        val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
-        if (result != null) {
-            if (result.contents == null) {
-                Toast.makeText(requireContext(), "Сканирование отменено", Toast.LENGTH_SHORT).show()
-            } else {
-                // Обрабатываем результат сканирования
-                handleScannedQR(result.contents)
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data)
-        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     private fun handleScannedQR(qrContent: String) {
@@ -185,10 +182,5 @@ class EncodeFragment : Fragment() {
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Ошибка при добавлении контакта: ${e.message}", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }
