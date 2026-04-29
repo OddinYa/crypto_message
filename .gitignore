@@ -1,8 +1,46 @@
-```
-# Gradle
-.gradle/
+```xml
+# Android build artifacts
+*.apk
+*.aar
+*.dex
 
-# Logs
+# Android cache and build directories
+.gradle/
+build/
+app/build/
+intermediates/
+outputs/
+
+# Android Studio
+.idea/
+*.iml
+*.iws
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log Files
 *.log
-hs_err_pid*.log
+
+# Android generated files
+gen/
+out/
+
+# Keystore
+*.keystore
+*.jks
+
+# Coverage reports
+coverage/
+*.ec
+
+# Proguard folder used during the compilation
+proguard/
+
+# Logcat
+*.logcat
+
+# Android lint
+lint-results-*.xml
+lint/
 ```
