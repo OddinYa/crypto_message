@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/qrFragment"
+        android:icon="@android:drawable/ic_menu_share"
+        android:title="Мой QR" />
+
+    <item
+        android:id="@+id/encodeFragment"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="Написать" />
+
+    <item
+        android:id="@+id/decodeFragment"
+        android:icon="@android:drawable/ic_menu_view"
+        android:title="Прочитать" />
+
+</menu>

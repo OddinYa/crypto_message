@@ -1,15 +1,35 @@
+```
+# Android build artifacts
+*.apk
+*.aar
+*.dex
+*.so
+
+# Android build directories
+build/
+.gradle/
+captures/
+.externalNativeBuild/
+
+# Android Studio
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.iws
+*.log
+
+# Local configuration file (sdk path, etc)
 local.properties
+
+# Keystore properties
+key.properties
+
+# Log Files
+*.log
+
+# Built application files
+bin/
+gen/
+
+# Unit test results
+test-results/
+```
