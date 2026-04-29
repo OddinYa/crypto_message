@@ -1,16 +1,8 @@
 ```
-# Compiled and build artifacts
-*.class
-*.o
-*.obj
-*.out
-build/
-# Dependencies
+# Gradle
 .gradle/
-# Logs and temp files
+
+# Logs
 *.log
-*.tmp
-# Editors
-.vscode/
-.idea/
+hs_err_pid*.log
 ```
