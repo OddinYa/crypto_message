@@ -16,7 +16,7 @@ import com.example.ryptomessage.crypto.CryptoManager
 import com.example.ryptomessage.data.Contact
 import com.example.ryptomessage.data.PreferencesManager
 import com.example.ryptomessage.databinding.FragmentEncodeBinding
-import com.journeyapps.barcodecapture.BarcodeCapture
+import com.google.zxing.integration.android.IntentIntegrator
 
 class EncodeFragment : Fragment() {
 
@@ -29,12 +29,12 @@ class EncodeFragment : Fragment() {
     private var selectedContact: Contact? = null
     
     private val scanQRLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val scanResult = BarcodeCapture.parseActivityResult(result)
-        if (scanResult != null) {
-            if (scanResult.text == null) {
-                Toast.makeText(requireContext(), "Сканирование отменено", Toast.LENGTH_SHORT).show()
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val scanResult = IntentIntegrator.parseActivityResult(result)
+            if (scanResult != null && scanResult.contents != null) {
+                handleScannedQR(scanResult.contents!!)
             } else {
-                handleScannedQR(scanResult.text!!)
+                Toast.makeText(requireContext(), "Сканирование отменено", Toast.LENGTH_SHORT).show()
             }
         } else {
             Toast.makeText(requireContext(), "Ошибка сканирования", Toast.LENGTH_SHORT).show()
@@ -106,8 +106,13 @@ class EncodeFragment : Fragment() {
     }
 
     private fun scanQR() {
-        val intent = BarcodeCapture.buildIntent(requireContext())
-        scanQRLauncher.launch(intent)
+        val integrator = IntentIntegrator.forSupportFragment(this)
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+        integrator.setPrompt("Сканировать QR код")
+        integrator.setCameraId(0)
+        integrator.setBeepEnabled(true)
+        integrator.setBarcodeImageEnabled(false)
+        integrator.initiateScan()
     }
 
     private fun encodeMessage() {
