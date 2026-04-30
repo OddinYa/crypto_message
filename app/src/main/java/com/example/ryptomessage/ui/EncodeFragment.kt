@@ -68,6 +68,11 @@ class EncodeFragment : Fragment() {
                 selectedContact = null
             }
         }
+        
+        // Кнопка удаления контакта
+        binding.btnDeleteContact.setOnClickListener {
+            deleteSelectedContact()
+        }
     }
 
     private fun loadContacts() {
@@ -89,6 +94,9 @@ class EncodeFragment : Fragment() {
         if (contactsList.isNotEmpty()) {
             selectedContact = contactsList.first()
         }
+        
+        // Скрываем кнопку удаления если нет контактов
+        binding.btnDeleteContact.visibility = View.GONE
     }
 
     private fun scanQR() {
@@ -128,6 +136,9 @@ class EncodeFragment : Fragment() {
         }
         
         try {
+            // Получаем наш публичный ключ для подписи отправителя
+            val myPublicKey = prefsManager.publicKey
+            
             // Шифруем сообщение ТОЛЬКО публичным ключом получателя
             // Только получатель сможет расшифровать своим приватным ключом
             // Общий секретный ключ генерируется на лету и никогда не хранится
@@ -136,11 +147,19 @@ class EncodeFragment : Fragment() {
                 selectedContact!!.publicKey
             )
             
+            // Формируем итоговое сообщение с информацией об отправителе
+            // Формат: "senderPublicKey|encryptedMessage"
+            val finalMessage = if (!myPublicKey.isNullOrBlank()) {
+                "$myPublicKey|$encryptedMessage"
+            } else {
+                encryptedMessage
+            }
+            
             // Копируем в буфер обмена
-            copyToClipboard(encryptedMessage)
+            copyToClipboard(finalMessage)
             
             // Показываем результат
-            binding.tvResult.text = encryptedMessage
+            binding.tvResult.text = finalMessage
             binding.tvResult.visibility = View.VISIBLE
             
             Toast.makeText(requireContext(), "Сообщение зашифровано для ${selectedContact!!.nickname} и скопировано!", Toast.LENGTH_LONG).show()
@@ -154,6 +173,23 @@ class EncodeFragment : Fragment() {
         val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("Encrypted Message", text)
         clipboard.setPrimaryClip(clip)
+    }
+    
+    private fun deleteSelectedContact() {
+        if (selectedContact == null) {
+            Toast.makeText(requireContext(), "Выберите контакт для удаления", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        prefsManager.deleteContact(selectedContact!!.id)
+        Toast.makeText(requireContext(), "Контакт \"${selectedContact!!.nickname}\" удален", Toast.LENGTH_SHORT).show()
+        
+        // Обновляем список контактов
+        loadContacts()
+        selectedContact = null
+        
+        // Скрываем кнопку удаления после удаления контакта
+        binding.btnDeleteContact.visibility = View.GONE
     }
 
     override fun onDestroyView() {
