@@ -145,21 +145,43 @@ class DecodeFragment : Fragment() {
                 return
             }
             
+            // Проверяем, есть ли в сообщении публичный ключ отправителя
+            // Формат: "senderPublicKey|encryptedMessage"
+            val parts = encodedMessage.split("|", limit = 2)
+            val actualEncryptedMessage: String
+            val senderPublicKey: String?
+            
+            if (parts.size == 2 && parts[0].length > 100) {
+                // Предполагаем, что это публичный ключ (он достаточно длинный)
+                senderPublicKey = parts[0]
+                actualEncryptedMessage = parts[1]
+            } else {
+                senderPublicKey = null
+                actualEncryptedMessage = encodedMessage
+            }
+            
             // Расшифровываем сообщение ТОЛЬКО своим приватным ключом
             // Это работает ТОЛЬКО если сообщение было зашифровано НАШИМ публичным ключом
             // Контакт может прочитать сообщение ТОЛЬКО если у него есть наш публичный ключ
-            val decryptedMessage = CryptoManager.decryptMessage(encodedMessage, privateKey)
+            val decryptedMessage = CryptoManager.decryptMessage(actualEncryptedMessage, privateKey)
             
             // Показываем результат
             binding.tvDecodedMessage.text = decryptedMessage
             binding.cardResult.visibility = View.VISIBLE
             
-            // Обновляем информацию об отправителе (если контакт выбран)
-            if (selectedContact != null) {
-                val senderName = selectedContact?.nickname ?: "Отправитель"
-                binding.tvSenderLabel.text = "Отправитель: $senderName"
+            // Обновляем информацию об отправителе
+            if (!senderPublicKey.isNullOrBlank()) {
+                // Пытаемся найти контакт по публичному ключу
+                val contacts = prefsManager.getContacts()
+                val senderContact = contacts.find { it.publicKey == senderPublicKey }
+                
+                if (senderContact != null) {
+                    binding.tvSenderLabel.text = "Отправитель: ${senderContact.nickname} (из контактов)"
+                } else {
+                    binding.tvSenderLabel.text = "Отправитель: Неизвестный (нет в контактах)"
+                }
             } else {
-                binding.tvSenderLabel.text = "Отправитель: Неизвестный"
+                binding.tvSenderLabel.text = "Отправитель: Неизвестный (ключ не передан)"
             }
             
             Toast.makeText(requireContext(), "Сообщение расшифровано!", Toast.LENGTH_SHORT).show()
